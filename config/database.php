@@ -1,7 +1,7 @@
 <?php
 $host = 'localhost';
 $port = '3307';
-$dbname = 'atendelab';
+$dbname = 'atende_lab';
 $user = 'root';
 $password = '';
 try {
