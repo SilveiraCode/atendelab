@@ -2,31 +2,122 @@
 
 namespace App\Controllers;
 
-class PessoasController {
+use PDO;
+use PDOException;
 
-    public function listar() {
-        header('Content-Type: application/json');
-        echo json_encode([["id" => 1, "nome" => "Maria Aluna Teste", "email" => "maria.aluna@email.com", "telefone" => "47999998888"]]);
+class PessoasController 
+{
+    private PDO $pdo;
+
+    public function __construct() 
+    {
+        require __DIR__ . '/../../config/database.php';
+        $this->pdo = $pdo;
     }
 
-    public function buscarPorId() {
-        header('Content-Type: application/json');
-        echo json_encode(["id" => $_GET['id'] ?? null, "nome" => "Maria Aluna Teste", "email" => "maria.aluna@email.com", "telefone" => "47999998888"]);
+    private function json(array $dados, int $status = 200): void 
+    {
+        http_response_code($status);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($dados, JSON_UNESCAPED_UNICODE);
     }
 
-    public function criar() {
-        header('HTTP/1.1 201 Created');
-        header('Content-Type: application/json');
-        echo json_encode(["mensagem" => "Pessoa cadastrada com sucesso.", "id" => "2"]);
+    public function listar(): void 
+    {
+        $sql = 'SELECT id, nome, documento, telefone, email, status FROM pessoas ORDER BY nome';
+        $this->json($this->pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC));
     }
 
-    public function atualizar() {
-        header('Content-Type: application/json');
-        echo json_encode(["mensagem" => "Dados da pessoa atualizados com sucesso."]);
+    public function buscar(): void 
+    {
+        $id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
+        if (!$id) {
+            $this->json(['erro' => 'ID inválido.'], 400);
+            return;
+        }
+
+        $stmt = $this->pdo->prepare('SELECT id, nome, documento, telefone, email, status FROM pessoas WHERE id = :id');
+        $stmt->execute(['id' => $id]);
+        $pessoa = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$pessoa) {
+            $this->json(['erro' => 'Pessoa não encontrada.'], 404);
+            return;
+        }
+        $this->json($pessoa);
     }
 
-    public function excluir() {
-        header('Content-Type: application/json');
-        echo json_encode(["mensagem" => "Pessoa excluída com sucesso."]);
+    public function criar(): void 
+    {
+        $nome = trim($_POST['nome'] ?? '');
+        $documento = trim($_POST['documento'] ?? '');
+        $telefone = trim($_POST['telefone'] ?? '');
+        $email = trim($_POST['email'] ?? '');
+        $status = $_POST['status'] ?? 'ativo';
+
+        if ($nome === '' || $documento === '' || $email === '') {
+            $this->json(['erro' => 'Nome, documento and e-mail são obrigatórios.'], 422);
+            return;
+        }
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $this->json(['erro' => 'E-mail inválido.'], 422);
+            return;
+        }
+        if (!in_array($status, ['ativo', 'inativo'], true)) {
+            $this->json(['erro' => 'Status inválido.'], 422);
+            return;
+        }
+
+        try {
+            $stmt = $this->pdo->prepare('INSERT INTO pessoas (nome, documento, telefone, email, status) VALUES (:nome, :documento, :telefone, :email, :status)');
+            $stmt->execute(compact('nome', 'documento', 'telefone', 'email', 'status'));
+            $this->json(['mensagem' => 'Pessoa cadastrada com sucesso.'], 201);
+        } catch (PDOException $e) {
+            // Retorna o erro real do banco de dados caso algo dê errado
+            $this->json(['erro' => $e->getMessage()], 400);
+        }
+    }
+
+    public function atualizar(): void 
+    {
+        $id = filter_var($_POST['id'] ?? null, FILTER_VALIDATE_INT);
+        $nome = trim($_POST['nome'] ?? '');
+        $documento = trim($_POST['documento'] ?? '');
+        $telefone = trim($_POST['telefone'] ?? '');
+        $email = trim($_POST['email'] ?? '');
+        $status = $_POST['status'] ?? 'ativo';
+
+        if (!$id || $nome === '' || $documento === '' || $email === '') {
+            $this->json(['erro' => 'Dados obrigatórios ausentes.'], 422);
+            return;
+        }
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $this->json(['erro' => 'E-mail inválido.'], 422);
+            return;
+        }
+        if (!in_array($status, ['ativo', 'inativo'], true)) {
+            $this->json(['erro' => 'Status inválido.'], 422);
+            return;
+        }
+        try {
+            $stmt = $this->pdo->prepare('UPDATE pessoas SET nome = :nome, documento = :documento, telefone = :telefone, email = :email, status = :status WHERE id = :id');
+            $stmt->execute(compact('id', 'nome', 'documento', 'telefone', 'email', 'status'));
+            $this->json(['mensagem' => 'Pessoa updated com sucesso.']);
+        } catch (PDOException $e) {
+            $this->json(['erro' => $e->getMessage()], 400);
+        }
+    }
+
+    public function inativar(): void 
+    {
+        $id = filter_var($_POST['id'] ?? null, FILTER_VALIDATE_INT);
+        if (!$id) {
+            $this->json(['erro' => 'ID inválido.'], 422);
+            return;
+        }
+
+        $stmt = $this->pdo->prepare("UPDATE pessoas SET status = 'inativo' WHERE id = :id");
+        $stmt->execute(['id' => $id]);
+        $this->json(['mensagem' => 'Pessoa inativada com sucesso.']);
     }
 }

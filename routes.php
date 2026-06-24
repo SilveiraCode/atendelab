@@ -6,16 +6,16 @@ require_once __DIR__ . '/app/Middleware/auth.php';
 
 // Carrega o controller responsável pelos endpoints de usuários.
 // Observação: o arquivo no projeto está no singular (UsuarioController.php).
-require_once __DIR__ . '/app/controllers/UsuariosController.php';
-require_once __DIR__ . '/app/controllers/PessoasController.php';
-require_once __DIR__ . '/app/controllers/TiposAtendimentosController.php';
-require_once __DIR__ . '/app/controllers/AtendimentosController.php';
+require_once __DIR__ . '/app/Controllers/UsuariosController.php';
+require_once __DIR__ . '/app/Controllers/PessoasController.php';
+require_once __DIR__ . '/app/Controllers/TiposAtendimentosController.php';
+require_once __DIR__ . '/app/Controllers/AtendimentosController.php';
 
 $controller = $_GET['controller'] ?? 'auth';
 $action = $_GET['action'] ?? 'login';
 
 switch ($controller) {
-    case 'auth':
+   case 'auth':
         $authController = new AuthController();
 
         switch ($action) {
@@ -23,12 +23,16 @@ switch ($controller) {
                 $authController->exibirLogin();
                 break;
 
-            case 'entrar':
-                $authController->entrar();
-                break;
+            case 'entrar': // <-- ADICIONA ESTA LINHA
+                $authController->entrar(); // <-- ADICIONA ESTA LINHA
+                break; // <-- ADICIONA ESTA LINHA
 
             case 'dashboard':
                 $authController->dashboard();
+                break;
+
+            case 'logout':
+                $authController->logout();
                 break;
 
             case 'logout':
@@ -52,8 +56,8 @@ switch ($controller) {
                 $usuariosController->listar();
                 break;
 
-            case 'buscarPorId':
             case 'buscar':
+            case 'buscarPorId':
                 $usuariosController->buscarPorId();
                 break;
 
@@ -121,7 +125,7 @@ switch ($controller) {
                     $pessoasController->listar();
                     break;
                 case 'buscar':
-                    $pessoasController->buscarPorId();
+                    $pessoasController->buscar(); // Ajustado para o método real (.pdf pág. 37)
                     break;
                 case 'criar':
                     $pessoasController->criar();
@@ -130,7 +134,7 @@ switch ($controller) {
                     $pessoasController->atualizar();
                     break;
                 case 'excluir':
-                    $pessoasController->excluir();
+                    $pessoasController->inativar(); // Ajustado para inativar conforme o banco consolidado
                     break;
                 default:
                     echo 'Ação de pessoas não encontrada.';
@@ -143,7 +147,7 @@ switch ($controller) {
                     $tiposController->listar();
                     break;
                 case 'buscar':
-                    $tiposController->buscarPorId();
+                    $tiposController->buscar(); // Ajustado para o método real (.pdf pág. 41)
                     break;
                 case 'criar':
                     $tiposController->criar();
@@ -152,35 +156,43 @@ switch ($controller) {
                     $tiposController->atualizar();
                     break;
                 case 'excluir':
-                    $tiposController->excluir();
+                    $tiposController->inativar(); // Ajustado para inativar conforme o banco consolidado
                     break;
                 default:
                     echo 'Ação de tipos de atendimentos não encontrada.';
                     break;
             }
-        } elseif ($controllerAlt === 'atendimentos') {
-            $atendimentosController = new \App\Controllers\AtendimentosController();
-            switch ($actionAlt) {
-                case 'listar':
-                    $atendimentosController->listar();
-                    break;
-                case 'buscar':
-                    $atendimentosController->buscarPorId();
-                    break;
-                case 'criar':
-                    $atendimentosController->criar();
-                    break;
-                case 'atualizar':
-                    $atendimentosController->atualizar();
-                    break;
-                case 'excluir':
-                    $atendimentosController->excluir();
-                    break;
-                default:
-                    echo 'Ação de atendimentos não encontrada.';
-                    break;
-            }
-        } else {
+        }  elseif ($controllerAlt === 'atendimentos') {
+    $atendimentosController = new \App\Controllers\AtendimentosController();
+
+    switch ($actionAlt) {
+
+        case 'listar':
+            $atendimentosController->listar();
+            break;
+
+        case 'buscar':
+            $atendimentosController->buscar(); // Ajustado para o método real (.pdf pág. 44)
+            break;
+
+        case 'criar':
+            $atendimentosController->criar();
+            break;
+
+        case 'alterarStatus':
+            $atendimentosController->alterarStatus(); // Ajustado para alterarStatus conforme o roteiro
+            break;
+
+        case 'atualizar':
+        case 'excluir':
+            $atendimentosController->alterarStatus(); // Ajustado para alterarStatus conforme o roteiro
+            break;
+
+        default:
+            echo 'Ação de atendimentos não encontrada.';
+            break;
+    }
+} else {
             http_response_code(404);
             echo 'Controller nao encontrado.';
             
