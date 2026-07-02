@@ -62,7 +62,10 @@ class AtendimentosController
     {
         $pessoa_id = filter_var($_POST['pessoa_id'] ?? null, FILTER_VALIDATE_INT);
         $tipo_atendimento_id = filter_var($_POST['tipo_atendimento_id'] ?? null, FILTER_VALIDATE_INT);
-        $usuario_id = filter_var($_POST['usuario_id'] ?? null, FILTER_VALIDATE_INT);
+        
+        // Pega o ID do usuário diretamente da sessão ativa do sistema, já que ele não vem do formulário HTML
+        $usuario_id = $_SESSION['usuario']['id'] ?? null;
+        
         $descricao = trim($_POST['descricao'] ?? '');
         $data_atendimento = $_POST['data_atendimento'] ?? '';
         $horario_atendimento = $_POST['horario_atendimento'] ?? '';
